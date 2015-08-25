@@ -327,7 +327,7 @@ def addDir2(name, url, mode, iconimage):
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo(type="Video", infoLabels={"Title": name})
-    liz.addContextMenuItems([('Add to Addon Favorites', 'RunScript(TEMP)',)])
+    # liz.addContextMenuItems([('Add to Addon Favorites', 'RunScript(TEMP)',)])
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 
