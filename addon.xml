@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.channelawesome" name="ChannelAwesome.com" version="0.4.3" provider-name="Sonic-NKT">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0"/>
+        <import addon="plugin.video.youtube" version="3.0.0"/>
+		<import addon="script.module.beautifulsoup4" version="4.3.2"/> 
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="Default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en">ChannelAwesome.com Reviews and more...</summary>
+        <language>en</language>
+        <description lang="en">Very basic alpha Version of a KODI Addon for ChannelAwesome.com</description>
+        <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>        
+		<email>temp</email>
+        <website>http://channelawesome.com</website>
+    </extension>
+</addon>

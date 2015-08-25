@@ -1,0 +1,15 @@
+Blog Post:
+<iframe frameborder="0" width="640" height="270" src="//www.dailymotion.com/embed/video/x31i0ts" allowfullscreen></iframe>
+
+VIDEO-ID = x31i0ts 
+
+
+Where to get Video URL:
+,"240":[{"type":"video\/mp4","url":"http:\/\/www.dailymotion.com\/cdn\/H264-320x240\/video\/x31i0ts.mp4?auth=1440617818-2562-hq0yxx36-bc751a723f8db5d9ce716146a23ce305"}],"380":[{"type":"video\/mp4","url":"http:\/\/www.dailymotion.com\/cdn\/H264-512x384\/video\/x31i0ts.mp4?auth=1440617818-2562-pcd0dw6t-501ee947d15bd2b11a8cc9dfab7f7308"}],"480":[{"type":"video\/mp4","url":"http:\/\/www.dailymotion.com\/cdn\/H264-848x480\/video\/x31i0ts.mp4?auth=1440617818-2562-y9kolbt4-e549b8aa305717bf3db8209b30eab6c6"}]}
+
+Qualities: 240, 380 and 480 (in my test, i guess there is 720p as well.
+
+Get this string then remove backspaces and after thet get the video URLs:
+try best version
+
+"?auth=[random]" after url ending with ".mp4" is necessary for video playback, it wont play without this!
