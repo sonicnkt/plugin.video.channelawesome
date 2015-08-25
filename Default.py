@@ -123,7 +123,13 @@ def LISTALL(url): # WIP - Veeeery sloooow
     matchc = re.compile('class="pages">Page (.+?) of (.+?)</span>').findall(content)
     lastp = int(matchc[0][1])
 
+    progress = xbmcgui.DialogProgress()
+    progress.create('Progress', 'Listing all videos....')
     for i in range(1, lastp + 1):
+        percent = int( (100 / lastp) * i)
+        message = "Scraping page " + str(i) + " out of " + str(lastp)
+        progress.update( percent, "", message, "" )
+        xbmc.sleep( 1000 )
         url = baseurl + '/page/' + str(i)
         page_content = grab_url(url)
         match1 = re.compile(
@@ -131,6 +137,11 @@ def LISTALL(url): # WIP - Veeeery sloooow
             page_content)
         for url, name, thumbnail in match1:
             addLink(name, url, 4, thumbnail)
+        if progress.iscanceled():
+            break
+    progress.close()
+
+
 
 
 def SEARCHSITE(name):
