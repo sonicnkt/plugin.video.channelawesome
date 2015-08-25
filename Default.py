@@ -32,7 +32,6 @@ def CATEGORIES():
     addDir('Cinemas Snob', 'http://channelawesome.com/tag/cinema-snob', 2, '')
     addDir('Brad Tries', 'http://channelawesome.com/tag/brad-tries', 2, '')
     addDir('Linkara', 'http://channelawesome.com/category/videos/producers/linkara-producers', 2, '')
-    # Add your own favorite shows like this!
 
 
 def ALLSHOWS(url):
