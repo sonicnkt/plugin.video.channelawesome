@@ -24,7 +24,7 @@ def CATEGORIES():
     addDir('All Shows', 'http://channelawesome.com', 1, '')
     addDir('Search ChannelAwesome.com', '', 5, '')
     addDir('Favorites', '', 6, '')
-    ##
+
     addDir('Nostalgia Critic', 'http://channelawesome.com/category/videos/channelawesome/dougwalker/nostalgia-critic',
            2, '')
     addDir('Disneycember', 'http://channelawesome.com/tag/disneycember', 2, '')
