@@ -408,6 +408,9 @@ def LOCAL_DB(data):
             progress.close()
             if aborted:
                 print 'Scrape was aborted!' # DEBUG INFO
+                c.execute('DROP TABLE IF EXISTS "{}"'.format(db_name))
+                c.execute('DELETE FROM show_list WHERE table_name="{}"'.format(db_name))
+                conn.commit()
             else:
                 conn.commit()
         else:

@@ -2,7 +2,7 @@
 
 ## TODO List
 
-- Local DB update Function
+- move jumpt to page function to context menu?
 
 
 
