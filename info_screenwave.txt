@@ -37,3 +37,5 @@ Video Server: http://video3.screenwavemedia.com
 Video Server: Video_Server + /vod/ + VideoID + 	_hd1.mp4 	-> BEST Quality
 												_hight.mp4 	-> Good Quality 
 http://video3.screenwavemedia.com/vod/channelawesome-55a870e4d2dd3_hd1.mp4
+
+109.123.70.20/vod/at4w-55daa401b697c_hd1.mp4
