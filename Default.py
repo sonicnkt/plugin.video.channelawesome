@@ -27,11 +27,12 @@ local_db = os.path.join(profile, 'local_db.db')
 print 'DB PATH: ' + local_db
 pluginDir = sys.argv[0]
 
+# Create addon folder in user_data for settings and sqlite db file
 if not os.path.isfile(os.path.join(profile, 'settings.xml')):
     addon.setSetting(id='user_data_folder', value='True')
     print 'File wasnt there but is now'
 
-
+# Main List View
 def CATEGORIES():
     addDir('Latest Videos', 'http://channelawesome.com', 2, icon)
     addDir('All Shows', 'http://channelawesome.com', 1, '')
@@ -63,12 +64,10 @@ def LISTVIDEOS(url):
     match_str1 = 'href="(.+?)" title="Permalink to (.+?)" rel="bookmark">\n\t\t\t\t<img width="300" height="160" src="(.+?)"'
     # Match String 2: Plot
     match_str2 = '<div class="entry">\n\t\t\t<p>(.+?)<\/p>'
-    #Matches airdate
-    match_str3 = '<span class="tie-date">(.+?)<\/span>\s\s\s<span class="post'
 
     match1 = re.compile(match_str1).findall(content)
     match2 = re.compile(match_str2).findall(content)
-    #Find Airdate: match2=re.compile('</a></span>\n\t\n\t\t\n\t<span class="tie-date">(.+?)</span>').findall(link)
+
     # Combine those two tuples:
     video_info = []
     for num,entry in enumerate(match1):
@@ -92,10 +91,9 @@ def LISTVIDEOS(url):
         addDir(position, baseurl, 7, '')
 
     if lastp < 100 and curp == 1 and is_search == 0:
-        addDir('List All   (Warning!! This may take time!)', baseurl, 3, '')
+        addDir('List All Videos (This may take time!)', baseurl, 3, '')
 
     for url, name, thumbnail, plot in video_info:
-        print 'name: ' + name
         addLink(name, url, 4, thumbnail, plot)
 
     if is_search == 0:
@@ -131,7 +129,7 @@ def LISTALL(url): # WIP - Veeeery sloooow
     lastp = int(matchc[0][1])
 
     progress = xbmcgui.DialogProgress()
-    progress.create('Progress', 'Listing all videos....')
+    progress.create('Progress', 'Listing all videos...')
     for i in range(1, lastp + 1):
         percent = int( (100 / lastp) * i)
         message = "Scraping page " + str(i) + " out of " + str(lastp)
@@ -147,9 +145,6 @@ def LISTALL(url): # WIP - Veeeery sloooow
         if progress.iscanceled():
             break
     progress.close()
-
-
-
 
 def SEARCHSITE(name):
     dialog = xbmcgui.Dialog()
@@ -196,7 +191,7 @@ def DISPLAY_FAVS(url):
         #xbmc.executebuiltin("Container.SetSortMethod(1)")
     else:
         dialog = xbmcgui.Dialog()
-        dialog.notification('Info', 'No shows were added to the addon favorites.', xbmcgui.NOTIFICATION_INFO, 5000)
+        dialog.notification('Info', 'No shows were added to the addon favorites.', xbmcgui.NOTIFICATION_INFO, 1000)
         CATEGORIES()
 
 
@@ -241,7 +236,7 @@ def DISPLAY_DB(url):
             addDir4(show_name, table_name, 9, '')
     else:
         dialog = xbmcgui.Dialog()
-        dialog.notification('Info', 'No shows were added to the local db.', xbmcgui.NOTIFICATION_INFO, 5000)
+        dialog.notification('Info', 'No shows were added to the local db.', xbmcgui.NOTIFICATION_INFO, 1000)
         CATEGORIES()
 
 def DISPLAY_DB_SHOW(table_name):
@@ -252,7 +247,7 @@ def DISPLAY_DB_SHOW(table_name):
     conn.close()
     for name, url, thumbnail, plot, airdate in video_info:
         addLink(name.encode('ascii', 'ignore'), url, 4, thumbnail, plot.encode('ascii', 'ignore'), airdate)
-        #addLink(name, url, 4, thumbnail, plot)
+        # .encode(...) is needed because coming from the DB python cant display some utf8 symbols
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
     xbmc.executebuiltin("Container.SetSortMethod(2)")
@@ -289,7 +284,7 @@ def LOCAL_DB(data):
         # Progress Dialog
         progress = xbmcgui.DialogProgress()
         progress.create('Updating Show', 'Scraping new videos...')
-
+        counter = 0
         for i in range(1, lastp + 1):
             allready_in_db = 0
             percent = int( (100 / lastp) * i)
@@ -310,10 +305,12 @@ def LOCAL_DB(data):
             match2 = re.compile(match_str2).findall(page_content)
             match3 = re.compile(match_str3).findall(page_content)
 
-            # Combine those 3 tuples:
+            #Convert Aired-Date format
             airdates = []
             for entry in match3:
                 airdates.append(convert_airdate(entry))
+
+            # Combine those 3 tuples:
             video_info = []
             for num, entry in enumerate(match1):
                 new_entry = ()
@@ -327,9 +324,10 @@ def LOCAL_DB(data):
                 if test is None:
                     print 'Entry: "{}" not in DB!'.format(name)
                     c.execute('INSERT INTO {} VALUES ("{}","{}","{}","{}","{}")'.format(db_name, name, url, thumbnail, plot, airdate))
+                    counter = counter + 1
                 else: # Entry available in local DB
                     print 'Entry: "{}" allready in DB'.format(name)
-                    print 'Stopping update progress but will commit changes to DB'
+                    print 'Stopping update process but will commit changes to DB'
                     allready_in_db = 1
                     break
 
@@ -342,8 +340,15 @@ def LOCAL_DB(data):
         progress.close()
         if aborted:
             print 'Scrape was aborted!' # DEBUG INFO
+            dialog = xbmcgui.Dialog()
+            dialog.notification('Update canceled!', 'No updates were stored in the DB', xbmcgui.NOTIFICATION_WARNING, 3000)
         else:
             conn.commit()
+            dialog = xbmcgui.Dialog()
+            if counter > 0:
+                dialog.notification('Update Successfull', '{} entries added to the DB'.format(str(counter)), xbmcgui.NOTIFICATION_INFO, 3000)
+            else:
+                dialog.notification('No Updates', 'No updates were found for this show', xbmcgui.NOTIFICATION_INFO, 3000)
         conn.close()
 
     elif db_mode == 'ADD':
@@ -364,7 +369,6 @@ def LOCAL_DB(data):
             progress.create('Adding Show to local Database', 'Scraping all videos...')
 
             for i in range(1, lastp + 1):
-                allready_in_db = 0
                 percent = int( (100 / lastp) * i)
                 message = "Scraping page " + str(i) + " out of " + str(lastp)
                 progress.update( percent, "", message, "" )
@@ -376,33 +380,27 @@ def LOCAL_DB(data):
                 match_str1 = 'href="(.+?)" title="Permalink to (.+?)" rel="bookmark">\n\t\t\t\t<img width="300" height="160" src="(.+?)"'
                 # Match String 2: Plot
                 match_str2 = '<div class="entry">\n\t\t\t<p>(.+?)<\/p>'
-                #Matches airdate
+                # Match String Aired-Date
                 match_str3 = '<span class="tie-date">(.+?)<\/span>\s\s\s<span class="post'
 
                 match1 = re.compile(match_str1).findall(page_content)
                 match2 = re.compile(match_str2).findall(page_content)
                 match3 = re.compile(match_str3).findall(page_content)
 
-                # Combine those 3 tuples:
+                # Convert Aired-Dates
                 airdates = []
                 for entry in match3:
                     airdates.append(convert_airdate(entry))
+                # Combine those 3 tuples:
                 video_info = []
                 for num, entry in enumerate(match1):
                     new_entry = ()
                     new_entry = new_entry + entry + (match2[num],) + (airdates[num],)
                     video_info.append(new_entry)
-
                 for url, name, thumbnail, plot, airdate in video_info:
-
-                    # Add Test to see if entry is allready there, if yes break this loop and set allready_in_db = True
-
                     c.execute('INSERT INTO {} VALUES ("{}","{}","{}","{}","{}")'.format(db_name, name, url, thumbnail, plot, airdate))
-
                 if progress.iscanceled():
                     aborted = True
-                    break
-                if allready_in_db:
                     break
 
             progress.close()
@@ -411,6 +409,8 @@ def LOCAL_DB(data):
                 c.execute('DROP TABLE IF EXISTS "{}"'.format(db_name))
                 c.execute('DELETE FROM show_list WHERE table_name="{}"'.format(db_name))
                 conn.commit()
+                dialog = xbmcgui.Dialog()
+                dialog.notification('Process canceled!', 'The show was not added to the local DB.', xbmcgui.NOTIFICATION_WARNING, 3000)
             else:
                 conn.commit()
         else:
@@ -427,7 +427,6 @@ def LOCAL_DB(data):
             conn.commit()
         conn.close()
         xbmc.executebuiltin("Container.Refresh")
-        # Remove list item and/or go back one step
 
 
 def RESOLVELINK(url): # Grab the urls of the embedded videos
