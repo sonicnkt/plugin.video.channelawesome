@@ -63,7 +63,7 @@ def LISTVIDEOS(url):
     # Match String 1: URL, Name, Thumbnail
     match_str1 = 'href="(.+?)" title="Permalink to (.+?)" rel="bookmark">\n\t\t\t\t<img width="300" height="160" src="(.+?)"'
     # Match String 2: Plot
-    match_str2 = '<div class="entry">\n\t\t\t<p>(.+?)<\/p>'
+    match_str2 = '<div class="entry">\n\t\t\t<p>(.+?|)<\/p>'
 
     match1 = re.compile(match_str1).findall(content)
     match2 = re.compile(match_str2).findall(content)
