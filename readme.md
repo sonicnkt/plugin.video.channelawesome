@@ -3,7 +3,8 @@
 ## TODO List
 
 - move jumpt to page function to context menu?
-
+- Vimeo Support
+- Settings
 
 
 ## Ideas:
@@ -15,6 +16,14 @@
     "Nostalgia Critic:" -> ""
     "Nostalgia Critic;" -> ""
     "Nostalgia Critic Editorial:" -> "Editorial:"
+ 
+- DB Adding and Structure:
+    - add the scraped data to the db using the cleanname function
+        --> Results in Problem with " Character
+    - add integer primary key
+    - while adding or updating a show put the scraped data into a list first, after its finished turn the list around (first entry becomes last entry)
+        and then add it to the db using execute many.
+        This way everything would be in the correct order and you could use the integer PK for labeling the episodes.
 
 ## Problems:
 

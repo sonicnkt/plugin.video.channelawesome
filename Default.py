@@ -398,6 +398,7 @@ def LOCAL_DB(data):
                     new_entry = new_entry + entry + (match2[num],) + (airdates[num],)
                     video_info.append(new_entry)
                 for url, name, thumbnail, plot, airdate in video_info:
+                    print 'name: ' + cleanName(name) + '\nplot: ' + cleanName(plot)
                     c.execute('INSERT INTO {} VALUES ("{}","{}","{}","{}","{}")'.format(db_name, name, url, thumbnail, plot, airdate))
                 if progress.iscanceled():
                     aborted = True
