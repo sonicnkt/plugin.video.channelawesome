@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<settings>
+    <category label="Account">
+        <setting id="myname" type="text" label="Username" default="No Name"/>
+    </category>
+    <category label="Test">
+		<setting id="loop" type="bool" label="An und Aus" default="false"/>
+		<setting id="volume" label="Slider" type="slider" default="0" range="0,1,100" option="int" />
+        <setting label="Trenner" type="lsep"/>
+		<setting label="RunScript1" type="action" option="close" action="RunScript($CWD/default.py)"/>
+		<setting label="Runscript2" type="action" option="close" action="RunScript($CWD/advsettings.py)"/>
+	</category>
+</settings>
