@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# ChannelAwesome Addon
+# ChannelAwesome.com Addon
 import urllib
 import socket
 import re
