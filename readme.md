@@ -2,9 +2,9 @@
 
 ## TODO List
 
-- move jumpt to page function to context menu?
 - Vimeo Support
-- Settings
+
+
 
 
 ## Ideas:
@@ -17,19 +17,12 @@
     "Nostalgia Critic;" -> ""
     "Nostalgia Critic Editorial:" -> "Editorial:"
  
-- DB Adding and Structure:
-    - add the scraped data to the db using the cleanname function
-        --> Results in Problem with " Character
-    - add integer primary key
-    - while adding or updating a show put the scraped data into a list first, after its finished turn the list around (first entry becomes last entry)
-        and then add it to the db using execute many.
-        This way everything would be in the correct order and you could use the integer PK for labeling the episodes.
+- Add custom favorites (input tag links for example) from settings menu
 
 ## Problems:
 
-- If GOTO Function is canceled, dont open empty folder!
+- SEARCH Function (no input and open results)
 - If no embedded Video was found and the addon displays the entry text, stop kodi from trying to still playback this!
-
 - Get Rid of "Blue Dots" in the main view (Xperience1080 skin)
 - Displaying Names and Plots from the DB results in excepetiion, cleanName is not working here:
     WORKAROUND: .encode('ascii', 'ignore')

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.channelawesome" name="ChannelAwesome.com" version="0.7.1" provider-name="Sonic-NKT">
+<addon id="plugin.video.channelawesome" name="ChannelAwesome.com" version="0.8.0" provider-name="Sonic-NKT">
     <requires>
         <import addon="xbmc.python" version="2.1.0"/>
         <import addon="plugin.video.youtube" version="3.0.0"/>
@@ -12,7 +12,7 @@
         <platform>all</platform>
         <summary lang="en">ChannelAwesome.com Reviews and more...</summary>
         <language>en</language>
-        <description lang="en">Very basic alpha Version of a KODI Addon for ChannelAwesome.com</description>
+        <description lang="en">Beta version of a KODI addon for ChannelAwesome.com</description>
         <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>        
 		<email>temp</email>
         <website>http://channelawesome.com</website>

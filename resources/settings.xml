@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 
 <settings>
-    <category label="Account">
-        <setting id="myname" type="text" label="Username" default="No Name"/>
-    </category>
-    <category label="Test">
-		<setting id="loop" type="bool" label="An und Aus" default="false"/>
-		<setting id="volume" label="Slider" type="slider" default="0" range="0,1,100" option="int" />
+    <category label="Main">
+		<setting label="General" type="lsep"/>
+        <setting id="page_indicator" type="bool" label="Display Page Indicator" default="true"/>
+		<setting label="Database" type="lsep"/>
+        <setting id="episode_num" type="bool" label="Display Episdoe Number" default="false"/>
+        <setting label="Clear local DB" type="action" action="RunPlugin(plugin://plugin.video.channelawesome/?mode=10)"/>
+        <!--
+        <setting id="volume" label="Slider" type="slider" default="0" range="0,1,100" option="int" />
         <setting label="Trenner" type="lsep"/>
 		<setting label="RunScript1" type="action" option="close" action="RunScript($CWD/default.py)"/>
 		<setting label="Runscript2" type="action" option="close" action="RunScript($CWD/advsettings.py)"/>
+		-->
 	</category>
 </settings>
