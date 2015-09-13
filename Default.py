@@ -38,6 +38,7 @@ def CATEGORIES():
     addDir('Search ChannelAwesome.com', '', 4, '')
     addDir('Addon Favorites', '', 5, '')
     addDir('Local Database', '', 7, '')
+    xbmc.executebuiltin('Container.SetViewMode(500)')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def ALLSHOWS(url):
@@ -87,7 +88,7 @@ def LISTVIDEOS(url):
             addInfo(matchc[0][0], matchc[0][1], baseurl)
 
     for url, name, thumbnail, plot in video_info:
-        addLink(name, url, 3, thumbnail, plot, 'airdate', baseurl, lastp)
+        addLink(name, url, 3, thumbnail, plot, show_url=baseurl, max_page=lastp)
 
     if is_search == 0:
         if '/page/' in baseurl:
@@ -189,7 +190,7 @@ def DISPLAY_FAVS():
     else:
         dialog = xbmcgui.Dialog()
         dialog.notification('Info', 'No shows were added to the addon favorites.', xbmcgui.NOTIFICATION_INFO, 1000)
-        #xbmc.executebuiltin("ActivateWindow(10024,{})".format(pluginDir))
+        #xbmc.executebuiltin("ReplaceWindow(10024,{})".format(pluginDir))
         #xbmc.executebuiltin("PreviousMenu")
         #xbmc.executebuiltin("Back")
 
@@ -250,15 +251,20 @@ def DISPLAY_DB_SHOW(db_table):
         video_info = c.fetchall()
         conn.close()
         for id, name, url, thumbnail, plot, airdate in video_info:
-            if get_bool_settings('episode_num'):
-                display_name = str(id) + '. ' + name.encode('ascii', 'ignore')
-            else:
-                display_name = name
-            addLink(display_name, url, 3, thumbnail, plot.encode('ascii', 'ignore'), airdate)
+            name = name.encode('ascii', 'ignore')
+            plot = plot.encode('ascii', 'ignore')
             # .encode(...) is needed because coming from the DB python cant display some utf8 symbols
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
-        xbmc.executebuiltin("Container.SetSortMethod(2)")
+            if get_bool_settings('episode_view'):
+                addLink(name, url, 3, thumbnail, plot, episode=id, date=airdate)
+            else:
+                addLink(name, url, 3, thumbnail, plot, date=airdate)
+        if get_bool_settings('episode_view'):
+            xbmc.executebuiltin('Container.SetViewMode(504)')
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
+        else:
+            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
+            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
+            xbmc.executebuiltin("Container.SetSortMethod(2)")
 
 def EDIT_DB(db_arg):
     print 'Scrape for DB Activated'
@@ -479,19 +485,20 @@ def addInfo(curp, lastp, show_url):
         liz.addContextMenuItems([('Jump to page', RunPlugin1,), ('List all', RunPlugin2,)])
     return xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=None, listitem=liz)
 
-def addLink(name, url, mode, iconimage, plot='Plot Info', airdate='airdate', show_url='show_url', max_page=None):
+def addLink(name, url, mode, iconimage, plot='Plot Info', episode=None, date=None, show_url=None, max_page=None):
     u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
     ok = True
     liz = xbmcgui.ListItem(utils.cleanName(name), iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-    if airdate != 'airdate':
-        labels = {"Title": utils.cleanName(name), "plot" : utils.cleanName(plot), "date" : airdate}
+    if date and episode:
+        labels = {"Title": utils.cleanName(name), "Plot" : utils.cleanName(plot), "Season": '1', "Episode": str(episode), "Aired" : utils.convert_airdate(date, 'aired')}
+        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+    elif date:
+        labels = {"Title": utils.cleanName(name), "Plot" : utils.cleanName(plot), "date" : utils.convert_airdate(date, 'date')}
     else:
         labels = {"Title": utils.cleanName(name), "plot" : utils.cleanName(plot)}
     liz.setInfo(type="Video", infoLabels=labels)
     liz.setProperty('IsPlayable', 'true')
-    if show_url != 'show_url' and max_page:
-        #print 'Show URL: ' + show_url
-        #print 'Max. Page No.' + str(max_page)
+    if show_url and max_page:
         RunPlugin = 'RunPlugin({}?mode=11&url={}&max_page={})'.format(sys.argv[0], urllib.quote_plus(show_url), str(max_page))
         liz.addContextMenuItems([('Jump to page', RunPlugin,),])
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)

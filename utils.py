@@ -70,7 +70,7 @@ def cleanName(name):
     name = name.strip()
     return name
 
-def convert_airdate(airdate):
+def convert_airdate(airdate, mode):
     airdate = re.compile('(.+?)\s([0-9]{1,2}),\s([0-9]{4})').findall(airdate)
     months = {'January': '01',
               'February': '02',
@@ -89,8 +89,11 @@ def convert_airdate(airdate):
     day = airdate[0][1]
     if len(day) < 2:
         day = '0' + day
-    #date = year + '-' + month + '-' + day
-    date = day + '.' + month + '.' + year
+    if mode == 'date':
+        date = day + '.' + month + '.' + year
+    elif mode == 'aired':
+        date = year + '-' + month + '-' + day
+    #date = day + '.' + month + '.' + year
     return date
 
 def scrape_data(page_content, mode='None'):
@@ -105,15 +108,15 @@ def scrape_data(page_content, mode='None'):
     if mode == 'DB':
         match3 = re.compile(match_str3).findall(page_content)
         #Convert Aired-Date format
-        airdates = []
-        for entry in match3:
-            airdates.append(convert_airdate(entry))
+        #airdates = []
+        #for entry in match3:
+        #    airdates.append(convert_airdate(entry))
     # Combine those tuples:
     video_info = []
     for num, entry in enumerate(match1):
         new_entry = ()
         if mode == 'DB':
-            new_entry = new_entry + entry + (match2[num],) + (airdates[num],)
+            new_entry = new_entry + entry + (match2[num],) + (match3[num],)
         else:
             new_entry = new_entry + entry + (match2[num],)
         video_info.append(new_entry)
