@@ -50,7 +50,7 @@ def ALLSHOWS(url):
         'href="(.+?)"><span class="ubermenu-target-title ubermenu-target-text">(.+?)</span>').findall(content)
     xbmcplugin.addSortMethod(int(sys.argv[1]), 1)
     for url, name in match:
-        addDir2(name, url, 2, '')
+        addDir(name, url, 2, '', dirmode='allshows')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LISTVIDEOS(url):
@@ -154,7 +154,10 @@ def RESOLVELINK(url): # Grab the urls of the embedded videos
         header = soup.find("span", {"itemprop" : "name"}).text
         entry = soup.find("div", class_='entry').text
         showText(header, entry)
-        return #xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
+        dialog = xbmcgui.Dialog()
+        dialog.notification('No Video', 'No embedded video found.', xbmcgui.NOTIFICATION_INFO, 3000)
+        video_url=None
+        return
     listitem = xbmcgui.ListItem(path=video_url)
     return xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
 
@@ -164,12 +167,17 @@ def SEARCHSITE(name):
     d = d.replace(" ", "+")
     if d == '':
         print 'No input' #Debug Info
+        dialog = xbmcgui.Dialog()
+        dialog.notification('Info', 'No Input or Canceled', xbmcgui.NOTIFICATION_INFO, 1000)
         # TODO: Go Back to Mode 1
     else:
-        kodi_url = pluginDir + '?mode=2&url=' + urllib.quote_plus('http://channelawesome.com/?s=' + d)
-        builtin = 'ReplaceWindow(10025,{})'.format(kodi_url)
+        url = 'http://channelawesome.com/?s=' + d
+        LISTVIDEOS(url)
+        #kodi_url = pluginDir + '?mode=2&url=' + urllib.quote_plus('http://channelawesome.com/?s=' + d)
+        #builtin = 'ReplaceWindow(10025,{})'.format(kodi_url)
         #builtin = 'Container.Update({})'.format(kodi_url)
-        xbmc.executebuiltin(builtin)
+        #builtin = 'Container.Refresh'
+        #xbmc.executebuiltin(builtin)
         # NOT Perfect! with Container.Update you will be presented with the search dialog again if you go back
         #              with Replace.Window you kinda messup kodis windows and wont end up where you started from
         #              after leaving the addon with "back"
@@ -186,7 +194,7 @@ def DISPLAY_FAVS():
         print shows # DEBUG
         xbmcplugin.addSortMethod(int(sys.argv[1]), 1)
         for fav_name, fav_url in shows:
-            addDir3(fav_name, fav_url, 2, '')
+            addDir(fav_name, fav_url, 2, '', dirmode='favorites')
     else:
         dialog = xbmcgui.Dialog()
         dialog.notification('Info', 'No shows were added to the addon favorites.', xbmcgui.NOTIFICATION_INFO, 1000)
@@ -225,14 +233,14 @@ def DISPLAY_DB():
     conn = sqlite3.connect(local_db)
     c = conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS show_list (table_name TEXT PRIMARY KEY, show_name TEXT, show_url TEXT)')
-    c.execute("SELECT table_name, show_name, show_url FROM show_list")
+    c.execute("SELECT table_name, show_name, show_url, show_icon FROM show_list")
     shows = c.fetchall()
     conn.close()
     if len(shows):
         print shows # DEBUG
         xbmcplugin.addSortMethod(int(sys.argv[1]), 1)
-        for table_name, show_name, show_url in shows:
-            addDir4(show_name, table_name, 8, '', show_url)
+        for table_name, show_name, show_url, show_icon in shows:
+            addDBShow(show_name, table_name, 8, show_icon, show_url)
     else:
         dialog = xbmcgui.Dialog()
         dialog.notification('Info', 'No shows were added to the local db.', xbmcgui.NOTIFICATION_INFO, 2000)
@@ -283,24 +291,29 @@ def EDIT_DB(db_arg):
 
     # Connect to DB
     conn = sqlite3.connect(local_db)
+    conn.text_factory = str
     c = conn.cursor()
     if db_mode == 'UPDATE':
         print 'UPDATE STARTED!!!'
         print 'Show URL: '+ db_url
-        # Get max page number
-        content = utils.grab_url(db_url)
-        matchc = re.compile('class="pages">Page (.+?) of (.+?)</span>').findall(content)
-        lastp = int(matchc[0][1])
-
         # Progress Dialog
         progress = xbmcgui.DialogProgress()
         progress.create('Updating Show', 'Scraping new videos...')
+        progress.update( 1, "", 'Initializing scrape...', "" )
+        # Grab Page Content
+        content = utils.grab_url(db_url)
+        # Grab Show Icon
+        show_icon = utils.grab_icon(content)
+        # Get max page number
+        matchc = re.compile('class="pages">Page (.+?) of (.+?)</span>').findall(content)
+        lastp = int(matchc[0][1])
+
         counter = 0
         video_list = []
         for i in range(1, lastp + 1):
             allready_in_db = 0
             percent = int( (100 / lastp) * i)
-            message = "Scraping page " + str(i) + " out of " + str(lastp)
+            message = "Scraping page " + str(i) + " of " + str(lastp)
             progress.update( percent, "", message, "" )
             xbmc.sleep( 1000 )
             url = db_url + 'page/' + str(i)
@@ -336,13 +349,14 @@ def EDIT_DB(db_arg):
             dialog.notification('Update canceled!', 'No updates were stored in the DB', xbmcgui.NOTIFICATION_WARNING, 3000)
         else:
             dialog = xbmcgui.Dialog()
+            c.execute('UPDATE show_list SET show_icon="{}" WHERE table_name="{}"'.format(show_icon, db_name))
             if len(video_list) > 0:
                 video_list.reverse()
                 c.executemany('INSERT INTO {} (name, url, thumb, plot, airdate) VALUES (?,?,?,?,?)'.format(db_name), video_list)
-                conn.commit()
                 dialog.notification('Update Successfull', '{} entries added to the DB'.format(str(counter)), xbmcgui.NOTIFICATION_INFO, 3000)
             else:
                 dialog.notification('No Updates', 'No updates were found for this show', xbmcgui.NOTIFICATION_INFO, 3000)
+        conn.commit()
         conn.close()
 
     elif db_mode == 'ADD':
@@ -350,21 +364,21 @@ def EDIT_DB(db_arg):
         test = c.fetchone()
         if test is None:
             print 'Table: "{}" does not exist in DB, i will continue'.format(db_name)
-            # Create DB entries
-            c.execute('CREATE TABLE IF NOT EXISTS {} (id INTEGER PRIMARY KEY, name TEXT, url TEXT, thumb TEXT, plot TEXT, airdate TEXT)'.format(db_name))
-            c.execute('CREATE TABLE IF NOT EXISTS show_list (table_name  TEXT PRIMARY KEY, show_name TEXT, show_url TEXT)')
-            c.execute('INSERT OR REPLACE INTO show_list VALUES ("{}", "{}", "{}")'.format(db_name, show_name, db_url))
-            # Get max page number
-            content = utils.grab_url(db_url)
-            matchc = re.compile('class="pages">Page (.+?) of (.+?)</span>').findall(content)
-            lastp = int(matchc[0][1])
             # Progress Dialog
             progress = xbmcgui.DialogProgress()
             progress.create('Adding Show to local Database', 'Scraping all videos...')
+            progress.update( 1, "", 'Initializing scrape...', "" )
+            # Grab Page Conent
+            content = utils.grab_url(db_url)
+            # Grab Show Icon
+            show_icon = utils.grab_icon(content)
+            # Get max page number
+            matchc = re.compile('class="pages">Page (.+?) of (.+?)</span>').findall(content)
+            lastp = int(matchc[0][1])
             video_list = []
             for i in range(1, lastp + 1):
                 percent = int( (100 / lastp) * i)
-                message = "Scraping page " + str(i) + " out of " + str(lastp)
+                message = "Scraping page " + str(i) + " of " + str(lastp)
                 progress.update( percent, "", message, "" )
                 xbmc.sleep( 1000 )
                 url = db_url + 'page/' + str(i) # Modified "/page/" to "page/"
@@ -381,18 +395,23 @@ def EDIT_DB(db_arg):
                     break
 
             progress.close()
+            dialog = xbmcgui.Dialog()
             if aborted:
                 print 'Scrape was aborted!' # DEBUG INFO
-                c.execute('DROP TABLE IF EXISTS "{}"'.format(db_name))
-                c.execute('DELETE FROM show_list WHERE table_name="{}"'.format(db_name))
-                conn.commit()
-                dialog = xbmcgui.Dialog()
                 dialog.notification('Process canceled!', 'The show was not added to the local DB.', xbmcgui.NOTIFICATION_WARNING, 3000)
             else:
                 if len(video_list) > 0:
                     # Turn List of Videos arround to get accurate list based on release date
                     video_list.reverse()
+                    # Create DB Tables
+                    c.execute('CREATE TABLE IF NOT EXISTS {} (id INTEGER PRIMARY KEY, name TEXT, url TEXT, thumb TEXT, plot TEXT, airdate TEXT)'.format(db_name))
+                    c.execute('CREATE TABLE IF NOT EXISTS show_list (table_name  TEXT PRIMARY KEY, show_name TEXT, show_url TEXT, show_icon TEXT)')
+                    # Add Content to DB
+                    c.execute('INSERT OR REPLACE INTO show_list VALUES ("{}", "{}", "{}", "{}")'.format(db_name, show_name, db_url, show_icon))
                     c.executemany('INSERT INTO {} (name, url, thumb, plot, airdate) VALUES (?,?,?,?,?)'.format(db_name), video_list)
+                    dialog.notification('Process Complete!',
+                                        'The show "{}" was added to the local DB.'.format(show_name),
+                                        xbmcgui.NOTIFICATION_INFO, 3000)
                     conn.commit()
         else:
             print 'Table: "{}" does exist in DB, i will not continue'.format(db_name)
@@ -413,11 +432,11 @@ def EDIT_DB(db_arg):
 def CLEAR_DB():
     dialog1 = xbmcgui.Dialog()
     dialog2 = xbmcgui.Dialog()
-    if dialog1.yesno("Clear local DB", 'Dou you really want to clear local DB','and remove all saved favorites and shows', "",'No','Yes'):
+    if dialog1.yesno("Clear local DB", 'Dou you really want to clear local DB','and remove all saved favorites and shows?', "",'No','Yes'):
         os.remove(os.path.join(profile, 'local_db.db'))
-        dialog2.notification('Removed', 'Local DB was removed!', xbmcgui.NOTIFICATION_INFO, 3000)
+        dialog2.notification('DB Cleared', 'Local DB was cleared!', xbmcgui.NOTIFICATION_INFO, 3000)
     else:
-        dialog2.notification('Cancled', 'Local DB was not removed!', xbmcgui.NOTIFICATION_INFO, 3000)
+        dialog2.notification('Process Canceled', 'Local DB was not removed!', xbmcgui.NOTIFICATION_INFO, 3000)
 
 def JUMPTO(url, max_page):
     print 'Max Page:' + str(max_page)
@@ -490,7 +509,7 @@ def addLink(name, url, mode, iconimage, plot='Plot Info', episode=None, date=Non
     ok = True
     liz = xbmcgui.ListItem(utils.cleanName(name), iconImage="DefaultVideo.png", thumbnailImage=iconimage)
     if date and episode:
-        labels = {"Title": utils.cleanName(name), "Plot" : utils.cleanName(plot), "Season": '1', "Episode": str(episode), "Aired" : utils.convert_airdate(date, 'aired')}
+        labels = {"Title": utils.cleanName(name), "Plot" : utils.cleanName(plot), "Season": '0', "Episode": str(episode), "Aired" : utils.convert_airdate(date, 'aired')}
         xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     elif date:
         labels = {"Title": utils.cleanName(name), "Plot" : utils.cleanName(plot), "date" : utils.convert_airdate(date, 'date')}
@@ -504,39 +523,25 @@ def addLink(name, url, mode, iconimage, plot='Plot Info', episode=None, date=Non
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)
     return ok
 
-def addDir(name, url, mode, iconimage): # Standard
+def addDir(name, url, mode, iconimage, dirmode=None): # Standard
     u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo(type="Video", infoLabels={"Title": name})
+    #liz.setInfo(type="Video", infoLabels={"Title": name})
+    if dirmode == 'allshows': # All Shows
+        add_db_cmd = 'MODE:ADD;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
+        add_fav_cmd = 'MODE:ADD;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
+        RunPlugin1 = 'RunPlugin({}?mode=9&db_arg={})'.format(sys.argv[0], add_db_cmd)
+        RunPlugin2 = 'RunPlugin({}?mode=6&fav_arg={})'.format(sys.argv[0], add_fav_cmd)
+        liz.addContextMenuItems([('Add content to DB', RunPlugin1,), ('Add addon Favorites', RunPlugin2,)])
+    if dirmode == 'favorites': # Addon Favorites
+        rem_fav_cmd = 'MODE:REMOVE;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
+        RunPlugin = 'RunPlugin({}?mode=6&fav_arg={})'.format(sys.argv[0], rem_fav_cmd)
+        liz.addContextMenuItems([('Remove from Addon Favorites', RunPlugin,)])
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 
-def addDir2(name, url, mode, iconimage): # All Shows Directory
-    u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
-    ok = True
-    liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo(type="Video", infoLabels={"Title": name})
-    add_db_cmd = 'MODE:ADD;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
-    add_fav_cmd = 'MODE:ADD;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
-    RunPlugin1 = 'RunPlugin({}?mode=9&db_arg={})'.format(sys.argv[0], add_db_cmd)
-    RunPlugin2 = 'RunPlugin({}?mode=6&fav_arg={})'.format(sys.argv[0], add_fav_cmd)
-    liz.addContextMenuItems([('Add content to DB', RunPlugin1,), ('Add addon Favorites', RunPlugin2,)])
-    ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
-    return ok
-
-def addDir3(name, url, mode, iconimage): # Directories in local favorites
-    u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
-    ok = True
-    liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo(type="Video", infoLabels={"Title": name})
-    rem_fav_cmd = 'MODE:REMOVE;NAME:{};URL:{}'.format(urllib.quote_plus(name), urllib.quote_plus(url))
-    RunPlugin = 'RunPlugin({}?mode=6&fav_arg={})'.format(sys.argv[0], rem_fav_cmd)
-    liz.addContextMenuItems([('Remove from Addon Favorites', RunPlugin,)])
-    ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
-    return ok
-
-def addDir4(name, db_table, mode, iconimage, show_url): # Directories in local DB
+def addDBShow(name, db_table, mode, iconimage, show_url): # Directories in local DB
     u = sys.argv[0] + "?db_table=" + urllib.quote_plus(db_table) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)

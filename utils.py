@@ -28,6 +28,15 @@ def grab_url(url):
     response.close()
     return link
 
+def grab_icon(content):
+    match_str = '<span class="post-meta-author"><a href="(.+?)" title="">.+</a></span>'
+    author_url = re.compile(match_str).search(content).group(1)
+    author_page = grab_url(author_url)
+    icon_str = '<div id="author-avatar">\s\s+<img alt=\'\' src=\'(.+?)\''
+    icon_url = re.compile(icon_str).search(author_page).group(1)
+    icon_url = icon_url.split("?")[0]
+    return icon_url
+
 def get_video(url):
     # Determine if ScreenWave, DailyMotion or Youtube
     print url
@@ -100,17 +109,13 @@ def scrape_data(page_content, mode='None'):
     # Match String 1: URL, Name, Thumbnail
     match_str1 = 'href="(.+?)" title="Permalink to (.+?)" rel="bookmark">\n\t\t\t\t<img width="300" height="160" src="(.+?)"'
     # Match String 2: Plot
-    match_str2 = '<div class="entry">\n\t\t\t<p>(.+?)<\/p>'
+    match_str2 = '<div class="entry">\n\t\t\t<p>(.+?|)<\/p>'
     #Matches airdate
     match_str3 = '<span class="tie-date">(.+?)<\/span>\s\s\s<span class="post'
     match1 = re.compile(match_str1).findall(page_content)
     match2 = re.compile(match_str2).findall(page_content)
     if mode == 'DB':
         match3 = re.compile(match_str3).findall(page_content)
-        #Convert Aired-Date format
-        #airdates = []
-        #for entry in match3:
-        #    airdates.append(convert_airdate(entry))
     # Combine those tuples:
     video_info = []
     for num, entry in enumerate(match1):
